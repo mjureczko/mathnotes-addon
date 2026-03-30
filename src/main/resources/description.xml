@@ -5,7 +5,7 @@
     xmlns:xlink="http://www.w3.org/1999/xlink">
 
   <identifier value="pl.marianjureczko.mathnotes.addon"/>
-  <version value="1.0.0"/>
+  <version value="1.0.1"/>
 
   <display-name>
     <name lang="en">MathNotes</name>
