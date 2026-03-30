@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "release" to confirm'
+        required: true
+        default: ''
+
+jobs:
+  release:
+    name: Test → Build → Release → Version bump
+    runs-on: ubuntu-latest
+    # Prevent accidental triggers
+    if: github.event.inputs.confirm == 'release'
+
+    permissions:
+      contents: write   # needed for creating release and pushing version bump
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+        with:
+          # Use a PAT or the default token; fetch full history for pushing
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # ── Java ─────────────────────────────────────────────────────────────────
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant gradlew execute permission
+        run: chmod +x gradlew
+
+      # ── Test ──────────────────────────────────────────────────────────────────
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: build/reports/tests/
+
+      # ── Build ─────────────────────────────────────────────────────────────────
+      - name: Build extension
+        run: ./gradlew buildExtension --no-daemon
+
+      # ── Extract current version ───────────────────────────────────────────────
+      - name: Read current version
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
+          echo "current=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "oxt=build/dist/mathnotes-addon-${VERSION}.oxt" >> "$GITHUB_OUTPUT"
+
+      # ── GitHub Release ────────────────────────────────────────────────────────
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: MathNotes ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: ${{ steps.version.outputs.oxt }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Bump patch version ────────────────────────────────────────────────────
+      - name: Bump patch version in build.gradle.kts and description.xml
+        run: |
+          CURRENT="${{ steps.version.outputs.current }}"
+          IFS='.' read -ra parts <<< "$CURRENT"
+          NEW_PATCH=$(( ${parts[2]} + 1 ))
+          NEW_VERSION="${parts[0]}.${parts[1]}.$NEW_PATCH"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_ENV"
+
+          sed -i "s/version = \"$CURRENT\"/version = \"$NEW_VERSION\"/" build.gradle.kts
+          sed -i "s/<identifier value=\"pl.marianjureczko.mathnotes.addon\"\/>/<identifier value=\"pl.marianjureczko.mathnotes.addon\"\/>/" \
+              src/main/resources/description.xml
+          sed -i "s/<version value=\"$CURRENT\"\/>/<version value=\"$NEW_VERSION\"\/>/" \
+              src/main/resources/description.xml
+
+      - name: Commit and push version bump
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add build.gradle.kts src/main/resources/description.xml
+          git commit -m "chore: bump version to ${{ env.new_version }} [skip ci]"
+          git push

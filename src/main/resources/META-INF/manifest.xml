@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+
+  <!-- Root bundle marker -->
+  <manifest:file-entry
+      manifest:media-type="application/vnd.sun.star.package-bundle"
+      manifest:full-path="/"/>
+
+  <!-- Passive component registration (modern approach) -->
+  <manifest:file-entry
+      manifest:media-type="application/vnd.sun.star.uno-components"
+      manifest:full-path="components.xml"/>
+
+  <!-- Toolbar button definition -->
+  <manifest:file-entry
+      manifest:media-type="application/vnd.sun.star.configuration-data"
+      manifest:full-path="registry/data/org/openoffice/Office/Addons.xcu"/>
+
+  <!-- Protocol handler URL routing -->
+  <manifest:file-entry
+      manifest:media-type="application/vnd.sun.star.configuration-data"
+      manifest:full-path="registry/data/org/openoffice/Office/ProtocolHandler.xcu"/>
+
+</manifest:manifest>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Passive component registration for the MathNotes addon.
+  LibreOffice's Java2 loader will call MathNotesHandler.__getComponentFactory()
+  to obtain the XSingleComponentFactory for this implementation.
+-->
+<components xmlns="http://openoffice.org/2010/uno-components">
+  <component loader="com.sun.star.loader.Java2" uri="mathnotes.jar">
+    <implementation name="com.mathnotes.MathNotesHandler">
+      <service name="com.sun.star.frame.ProtocolHandler"/>
+    </implementation>
+  </component>
+</components>
