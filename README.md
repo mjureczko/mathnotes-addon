@@ -1,6 +1,6 @@
 # MathNotes LibreOffice Addon
 
-A LibreOffice addon for managing math notes.
+LibreOffice addon for creating math notes, designed to support pupils with dysgraphia .
 
 ## License
 
